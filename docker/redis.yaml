@@ -9,7 +9,7 @@ services:
     image: redis:6.2
     restart: unless-stopped
     ports:
-      - 26379:6379
+      - 6379:6379
     volumes:
       - redis_data:/data
     logging: &default-logging

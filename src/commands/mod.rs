@@ -127,7 +127,7 @@ mod tests {
 
     #[tokio::test]
     async fn exec_lua_add_job_case_1() -> Result<(), RedisError> {
-        let config = RedisConfig::from_url("redis://0.0.0.0:26379/0")?;
+        let config = RedisConfig::from_url("redis://0.0.0.0:6379/0")?;
         let client = RedisClient::new(config, None, None);
         let _ = client.connect();
         let _ = client.wait_for_connect().await.unwrap();
@@ -167,7 +167,7 @@ mod tests {
 
     #[tokio::test]
     async fn exec_lua_pause_case_1() -> Result<(), RedisError> {
-        let config = RedisConfig::from_url("redis://0.0.0.0:26379/0")?;
+        let config = RedisConfig::from_url("redis://0.0.0.0:6379/0")?;
         let client = RedisClient::new(config, None, None);
         let _ = client.connect();
         let _ = client.wait_for_connect().await.unwrap();
@@ -195,7 +195,7 @@ mod tests {
 
     #[tokio::test]
     async fn exec_lua_resume_case_1() -> Result<(), RedisError> {
-        let config = RedisConfig::from_url("redis://0.0.0.0:26379/0")?;
+        let config = RedisConfig::from_url("redis://0.0.0.0:6379/0")?;
         let client = RedisClient::new(config, None, None);
         let _ = client.connect();
         let _ = client.wait_for_connect().await.unwrap();
@@ -223,7 +223,7 @@ mod tests {
 
     #[tokio::test]
     async fn exec_lua_update_delay_set_case_1() -> Result<(), RedisError> {
-        let config = RedisConfig::from_url("redis://0.0.0.0:26379/0")?;
+        let config = RedisConfig::from_url("redis://0.0.0.0:6379/0")?;
         let client = RedisClient::new(config, None, None);
         let _ = client.connect();
         let _ = client.wait_for_connect().await.unwrap();
@@ -256,11 +256,11 @@ mod tests {
 
     #[tokio::test]
     async fn exec_lua_move_unlocked_jobs_to_wait_case_1() -> Result<(), RedisError> {
-        let config = RedisConfig::from_url("redis://0.0.0.0:26379/0")?;
+        let config = RedisConfig::from_url("redis://0.0.0.0:6379/0")?;
         let policy = ReconnectPolicy::new_linear(0, 5000, 100);
         let client = RedisPool::new(config, None, Some(policy), 5)?;
 
-        // let config = RedisConfig::from_url("redis://0.0.0.0:26379/0")?;
+        // let config = RedisConfig::from_url("redis://0.0.0.0:6379/0")?;
         // let client = RedisClient::new(config, None, None);
         let _ = client.connect();
         let _ = client.wait_for_connect().await.unwrap();
