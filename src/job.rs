@@ -1,6 +1,10 @@
+use std::pin::Pin;
+use std::future::Future;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+
+pub type JobFn = Box<dyn Fn(String) -> Pin<Box<dyn Future<Output = ()>>>>;
 
 #[derive(Debug, Serialize, Clone)]
 pub struct JobOpts {
@@ -14,7 +18,7 @@ impl Default for JobOpts {
         JobOpts {
             custom_job_id: "".to_string(),
             priority: 0,
-            lifo: true
+            lifo: false
         }
     }
 }

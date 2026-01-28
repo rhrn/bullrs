@@ -6,6 +6,7 @@ use std::ffi::OsStr;
 use std::collections::HashMap;
 use fred::pool::RedisPool;
 use fred::prelude::*;
+use crate::queue::Queue;
 
 #[derive(Debug, PartialEq)]
 struct File<'a> {
@@ -75,26 +76,132 @@ pub struct Commands {
     scripts: HashMap<String, String>,
 }
 
-impl Commands {
-    pub async fn new(redis_client: RedisPool) -> Result<Commands, Box<dyn std::error::Error>> {
+impl<'a> Commands {
+    pub async fn new(redis_client: &RedisPool) -> Result<Commands, Box<dyn std::error::Error>> {
         let scripts = load_scripts().await?;
         Ok(Commands {
-            redis_client,
+            redis_client: redis_client.clone(),
             scripts
         })
     }
     
-    pub async fn add_job(&self, keys: Vec<String>, args: Vec<String>) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    pub async fn add_job(&self, queue: &Queue<'a>, args: Vec<String>) -> Result<Vec<String>, Box<dyn std::error::Error>> {
         let lua = self.scripts.get("add_job").unwrap();
-        println!("job added");
-        println!("keys: {:?}", keys);
-        println!("args: {:?}", args);
-        println!("script: {:?}", lua);
 
-        dbg!(&self.redis_client);
+        let keys = queue.get_keys(vec!(
+            "wait",
+            "paused",
+            "meta-paused",
+            "id",
+            "delayed",
+            "priority",
+        ));
+
+        //println!("job added");
+        //println!("args: {:?}", args);
+        //println!("keys: {:?}", keys);
 
         let result: Vec<String> = self.redis_client.eval(lua, keys, args).await.unwrap();
         Ok(result)
+    }
+
+    pub async fn update_delay_set(&self, queue: &Queue<'a>, timestamp: i64) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        let lua = self.scripts.get("update_delay_set").unwrap();
+
+        let keys = queue.get_keys(vec!(
+            "delayed",
+            "active",
+            "wait",
+            "priority",
+            "paused",
+            "meta-paused"
+        ));
+
+        let args = vec!(
+            queue.get_key(""),
+            timestamp.to_string(),
+            queue.token.to_string(),
+        );
+
+        let result: Vec<String> = self.redis_client.eval(lua, keys, args).await.unwrap();
+
+        // dbg!(&result);
+
+        Ok(result)
+    }
+
+    pub async fn get_job_id(&self, queue: &Queue<'a>) -> Result<Option<String>, Box<dyn std::error::Error>> {
+        let wait = queue.get_key("wait");
+        let active = queue.get_key("active");
+        let drain_deleay = 5.0;
+        dbg!(&wait);
+        dbg!(&active);
+        dbg!(drain_deleay);
+        let result: Vec<String> = self.redis_client.brpoplpush(wait, active, drain_deleay).await.unwrap_or(vec![]);
+
+        Ok(result.first().cloned())
+    }
+
+    pub async fn move_to_active(&self, queue: &Queue<'a>, job_id: Option<String>) -> Result<(Vec<String>, String), Box<dyn std::error::Error>> {
+        let lua = self.scripts.get("move_to_active").unwrap();
+        let timestamp = Utc::now().timestamp_millis();
+        let lock_duration = 30000;
+        let keys = queue.get_keys(vec!(
+            "wait",
+            "active",
+            "priority",
+            &("active".to_owned() + "@" + &queue.token),
+            "stalled",
+            "limiter",
+            "delayed",
+            "drained"
+        ));
+
+        let args = vec!(
+            queue.get_key(""),
+            queue.token.to_string(),
+            lock_duration.to_string(),
+            timestamp.to_string(),
+            job_id.unwrap_or("".to_string())
+        );
+
+        let result: (Vec<String>, String) = self.redis_client.eval(lua, keys, args).await?;
+
+        Ok(result)
+    }
+
+    pub async fn move_stalled_jobs_to_wait(&self, queue: &Queue<'a>) -> Result<(Vec<String>, Vec<String>), Box<dyn std::error::Error>> {
+        let lua = self.scripts.get("move_stalled_jobs_to_wait").unwrap();
+        let timestamp = Utc::now().timestamp_millis();
+        let max_stalled_count = 1;
+        let stalled_interval = 30000;
+
+        let keys = queue.get_keys(vec!(
+            "stalled",
+            "wait",
+            "active",
+            "failed",
+            "stalled-check",
+            "meta-paused",
+            "paused",
+        ));
+
+        let args = vec!(
+            max_stalled_count.to_string(),
+            queue.get_key(""),
+            timestamp.to_string(),
+            stalled_interval.to_string(),
+        );
+
+        dbg!(&keys);
+        dbg!(&args);
+
+        let (failed, stalled): (Vec<String>, Vec<String>) = self.redis_client.eval(lua, keys, args).await?;
+
+        dbg!(&failed);
+        dbg!(&stalled);
+
+        Ok((failed, stalled))
     }
 }
 
@@ -291,6 +398,17 @@ mod tests {
         let result: (Vec<String>, Vec<String>) = client.eval(lua, keys, args).await.unwrap();
 
         dbg!(result);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn get_job_id_case_1() -> Result<(), RedisError> {
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn move_to_active_case_1() -> Result<(), Box<dyn std::error::Error>> {
 
         Ok(())
     }
