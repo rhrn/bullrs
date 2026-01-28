@@ -5,9 +5,9 @@ use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("bulljs main");
+    println!("bullrs main: simple");
 
-    let queue = Queue::new("queue", "redis://localhost:6379").await?;
+    let queue = Queue::new("test-queue", "redis://localhost:6379").await?;
 
     let qr = queue.process(|data: String| async move {
         sleep(Duration::from_millis(1000)).await;
