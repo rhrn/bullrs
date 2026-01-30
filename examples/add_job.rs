@@ -6,7 +6,7 @@ use uuid::Uuid;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("bullrs main: add job");
 
-    let queue = Queue::new("test-queue", "redis://localhost:6379").await?;
+    let queue = Queue::new("test-queue", "redis://localhost:26379").await?;
 
     let uuid = Uuid::new_v4();
 

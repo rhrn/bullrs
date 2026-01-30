@@ -1,3 +1,25 @@
+### reference
+See `REFERENCE.md` for the Rust API surface.
+
+### quick start
+```rust
+use bullrs::queue::Queue;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let queue = Queue::new("example", "redis://127.0.0.1:6379").await?;
+
+    let handle = queue.clone().process(|data: String| async move {
+        format!("processed: {}", data)
+    }).await?;
+
+    queue.add("hello").await?;
+
+    handle.close().await?;
+    Ok(())
+}
+```
+
 ### redis
 ```
 docker-compose -f docker/redis.yaml up -d
