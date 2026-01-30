@@ -1,0 +1,16 @@
+{
+  "name": "bull_rs_test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bull": "^4.10.4",
+    "bull-repl": "^0.29.0"
+  }
+}
