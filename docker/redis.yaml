@@ -1,0 +1,32 @@
+version: '3.7'
+
+volumes:
+  redis_data:
+
+services:
+
+  redis:
+    image: redis:6.2
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+    logging: &default-logging
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '2'
+
+  redis_bullrs:
+    image: redis:6.2
+    restart: unless-stopped
+    ports:
+      - 26379:6379
+    volumes:
+      - redis_data:/data
+    logging: &default-logging
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '2'
