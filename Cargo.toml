@@ -1,7 +1,10 @@
 [package]
-name = "bullrs"
+name = "bull_rs"
 version = "0.1.0"
 edition = "2021"
+description = "An rust port from bulljs"
+license = "MIT"
+repository = "https://github.com/rhrn/bullrs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 # [lib]
